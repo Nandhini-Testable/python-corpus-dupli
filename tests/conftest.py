@@ -44,3 +44,10 @@ def bulk_order():
         "order_id": "T-2", "channel": "wholesale", "region": "EU", "tier": "silver",
         "lines": [{"sku": "S-2", "quantity": 600, "unit_price": 2.0}],
     })
+
+
+def pytest_report_collectionfinish(config, start_path, items):
+    """Help wb-cpu-worker testmon parse totals under ``pytest -q --collect-only``."""
+    if items is not None:
+        return "collected {} items".format(len(items))
+    return None
