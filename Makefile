@@ -37,6 +37,7 @@ tools:
 
 verify:
 	$(PYTHON) tools/tool_integration.py --verify
+	$(PYTHON) tools/verify_strategy_metrics.py
 
 audit:
 	conda list --json

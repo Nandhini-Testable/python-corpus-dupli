@@ -232,7 +232,7 @@ def rule_planted_pins():
     # requiring it in integrations.py would be wrong. What must hold is that
     # something asserts it is actually installed -- otherwise it goes back to
     # arriving by luck, which is what put it here in the first place.
-    guard = read("tests/test_platform.py")
+    guard = read("tests/check_platform.py")
     for pin in support:
         name = pin.split("==")[0]
         # Anchor to the ASSERTION, not the name. A bare `name in guard` match is
@@ -240,7 +240,7 @@ def rule_planted_pins():
         # which is how this very check first passed while asserting nothing.
         if 'importorskip("%s")' % name not in guard:
             fail("support pin %s has no importorskip guard in "
-                 "tests/test_platform.py -- an undeclared transitive that nobody "
+                 "tests/check_platform.py -- an undeclared transitive that nobody "
                  "checks is exactly how this pin came to be needed" % pin)
 
 
@@ -518,6 +518,33 @@ def rule_shell_and_yaml():
                     fail("%s does not compile on Python %s: %s" % (rel, PY, exc))
 
 
+def rule_strategy_workbook():
+    check("strategy workbook python metrics")
+    manifest = "strategy_metrics_python_v02.json"
+    if not exists(manifest):
+        fail("missing %s -- White Box Python crosswalk to workbook v0.2" % manifest)
+        return
+    payload = json.loads(read(manifest))
+    if payload.get("branch_id") != DATA["branchId"]:
+        fail("%s branch_id %r disagrees with dataset.json %r"
+             % (manifest, payload.get("branch_id"), DATA["branchId"]))
+    if payload.get("metric_count") != 103:
+        fail("%s metric_count is %r, expected 103 White Box Python metrics"
+             % (manifest, payload.get("metric_count")))
+    metrics = payload.get("metrics") or []
+    if len(metrics) != 103:
+        fail("%s lists %d metrics, expected 103" % (manifest, len(metrics)))
+    script = os.path.join(ROOT, "tools", "verify_strategy_metrics.py")
+    proc = subprocess.Popen([sys.executable, script],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    out, err = proc.communicate()
+    text = (out + err).decode("utf-8", "replace").strip()
+    if proc.returncode != 0:
+        fail("verify_strategy_metrics.py failed:\n" + text)
+    elif text:
+        print("      " + text.replace("\n", "\n      "))
+
+
 def rule_functional_flag():
     check("branchFunctional")
     # A branch marked functional must carry a lockfile; a branch marked
@@ -541,7 +568,7 @@ def main():
     for rule in (rule_interpreter_agreement, rule_pyproject_parses, rule_triggers, rule_status_matches_dataset,
                  rule_planted_pins, rule_duplicate_pair, rule_no_empty_packages,
                  rule_workspace, rule_readme, rule_prose_matches_repo,
-                 rule_branch_identity,
+                 rule_branch_identity, rule_strategy_workbook,
                  rule_shell_and_yaml, rule_functional_flag):
         try:
             rule()

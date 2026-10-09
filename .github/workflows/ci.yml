@@ -60,6 +60,9 @@ jobs:
       - name: Verify tool wiring
         run: .venv/bin/python tools/tool_integration.py --verify
 
+      - name: Verify White Box Python metrics (workbook v0.2)
+        run: .venv/bin/python tools/verify_strategy_metrics.py
+
       - name: Run every wired tool
         run: PYTHON=.venv/bin/python .venv/bin/python tools/tool_integration.py --run
 
